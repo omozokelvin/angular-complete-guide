@@ -1,10 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Recipe } from '../recipes/recipe.model';
 import { RecipeService } from '../recipes/recipe.service';
-import { exhaustMap, map, take, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +13,7 @@ export class DataStorageService {
 
   constructor(
     private httpClient: HttpClient,
-    private recipeService: RecipeService,
-    private authService: AuthService
+    private recipeService: RecipeService
   ) { }
 
   storeRecipes(): void {
@@ -30,19 +28,8 @@ export class DataStorageService {
   }
 
   fetchRecipes(): Observable<Recipe[]> {
-    // exhaustMap returns a new observable after the first is complete.
-    // take (1) will subscribe just once on demand and unsubscribe
-
-    return this.authService.user
+    return this.httpClient.get<Recipe[]>(this.recipeUrl)
       .pipe(
-        take(1),
-        exhaustMap(user => {
-          return this.httpClient.get<Recipe[]>(this.recipeUrl,
-            {
-              params: new HttpParams().set('auth', user.token),
-            }
-          );
-        }),
         map(recipes => {
           return recipes.map(recipe => {
             return {

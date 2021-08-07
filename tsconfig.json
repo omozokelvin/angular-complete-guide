@@ -27,5 +27,7 @@
     "parameter",
     "member-variable-declaration"
   ],
-  "rules": { "typedef": [true, "call-signature"] }
+  "rules": { 
+    "typedef": [true, "call-signature"]
+   }
 }

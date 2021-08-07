@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 export interface AuthResponseData {
   kind: string;
@@ -22,7 +23,12 @@ export class AuthService {
 
   user = new BehaviorSubject<User>(null);
 
-  constructor(private httpClient: HttpClient) { }
+  private tokenExpirationTimer: any;
+
+  constructor(
+    private httpClient: HttpClient,
+    private router: Router
+  ) { }
 
   signup(email: string, password: string): Observable<AuthResponseData> {
     return this.httpClient.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBOZ8QmkBBWXjxPuK0OQeX2klich8VQqIc',
@@ -49,6 +55,52 @@ export class AuthService {
       );
   }
 
+  autoLogin(): void {
+    const userDataBase64 = localStorage.getItem('userData');
+
+    if (!userDataBase64) {
+      return;
+    }
+
+    const userData: {
+      email: string,
+      id: string,
+      _token: string,
+      _tokenExpirationDate: string
+    } = JSON.parse(atob(userDataBase64));
+
+    const { email, id, _token, _tokenExpirationDate } = userData;
+
+    const loadedUser = new User(email, id, _token, new Date(_tokenExpirationDate));
+
+    if (loadedUser.token) {
+      this.user.next(loadedUser);
+
+      const expirationDuration = new Date(_tokenExpirationDate).getTime() - new Date().getTime();
+
+      this.autoLogout(expirationDuration);
+    }
+  }
+
+  logout(): void {
+    this.user.next(null);
+    this.router.navigate(['/auth']);
+    localStorage.removeItem('userData');
+
+    if (this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+    }
+
+    this.tokenExpirationTimer = null;
+  }
+
+  autoLogout(expirationDuration: number): void {
+
+    this.tokenExpirationTimer = setTimeout(() => {
+      this.logout();
+    }, expirationDuration);
+  }
+
   private handleAuthentication(responseData: AuthResponseData): void {
     const { email, localId, idToken, expiresIn } = responseData;
 
@@ -62,6 +114,11 @@ export class AuthService {
     );
 
     this.user.next(user);
+
+    this.autoLogout(+expiresIn * 1000);
+
+    // just having fun saving this as base64 string
+    localStorage.setItem('userData', btoa(JSON.stringify(user)));
   }
 
   private handleError(errorResponse: HttpErrorResponse): Observable<never> {
