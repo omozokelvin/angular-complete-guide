@@ -18,7 +18,7 @@
     <form
       #authForm="ngForm"
       (ngSubmit)="onSubmit(authForm)"
-      *ngIf="!isLoading">
+      [hidden]="isLoading">
       <div class="form-group">
         <label for="email">E-Mail</label>
         <input
