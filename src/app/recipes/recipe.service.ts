@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 import { Subject } from 'rxjs';
 import { Recipe } from './recipe.model';
 import * as shoppingListActions from '../shopping-list/store/shopping-list.actions';
+import * as fromApp from '../store/app.reducer';
 
 // TO INJECT A SERVICE TO ANOTHER SERVICE, ADD @INJECTABLE TO THE SERVICE THAT NEEDS THE OTHER SERVICES
 
@@ -36,7 +37,7 @@ export class RecipeService {
   private recipes: Recipe[] = [];
 
   constructor(
-    private store: Store<{ Ingredients: Ingredient[] }>
+    private store: Store<fromApp.AppState>
   ) { }
 
   setRecipes(recipes: Recipe[]): void {
