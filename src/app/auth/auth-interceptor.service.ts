@@ -14,6 +14,7 @@ export class AuthInterceptorService implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // exhaustMap returns a new observable after the first is complete.
+    // switchMap switches to a new observable and returns it
     // take (1) will subscribe just once on demand and unsubscribe
 
     return this.store.select('auth')
