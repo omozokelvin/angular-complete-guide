@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/my-first-app",
+    "public": "dist/ng-complete-guide",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -24,7 +24,9 @@ export interface AuthResponseData {
 // effects is an ongoing observable stream, it should never die, we should not throw an error
 
 const handleAuthentication = (resData: AuthResponseData) => {
-  const expirationDate = new Date(new Date().getTime() + (+resData.expiresIn) * 1000);
+  const expirationDate = new Date(
+    new Date().getTime() + +resData.expiresIn * 1000
+  );
 
   const user = new User(
     resData.email,
@@ -41,7 +43,7 @@ const handleAuthentication = (resData: AuthResponseData) => {
     userId: resData.localId,
     token: resData.idToken,
     expirationDate,
-    redirect: true
+    redirect: true,
   });
 };
 
@@ -74,19 +76,22 @@ const handleError = (errorResponse: HttpErrorResponse) => {
 
 @Injectable()
 export class AuthEffects {
-  authSignup = createEffect(
-    () => this.actions$.pipe(
+  authSignup = createEffect(() =>
+    this.actions$.pipe(
       ofType(AuthActions.SIGNUP_START),
       switchMap((signupAction: AuthActions.SignupStart) => {
-        return this.httpClient.post<AuthResponseData>(
-          'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.fireBaseAPIKey,
-          {
-            email: signupAction.payload.email,
-            password: signupAction.payload.password,
-            returnSecureToken: true
-          })
+        return this.httpClient
+          .post<AuthResponseData>(
+            'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' +
+              environment.fireBaseAPIKey,
+            {
+              email: signupAction.payload.email,
+              password: signupAction.payload.password,
+              returnSecureToken: true,
+            }
+          )
           .pipe(
-            tap(resData => {
+            tap((resData) => {
               this.authService.setLogoutTimer(+resData.expiresIn * 1000);
             }),
             map(handleAuthentication),
@@ -96,69 +101,75 @@ export class AuthEffects {
     )
   );
 
-  authLogin = createEffect(
-    () => this.actions$.pipe(
+  authLogin = createEffect(() =>
+    this.actions$.pipe(
       ofType(AuthActions.LOGIN_START),
-      switchMap(
-        (authData: AuthActions.LoginStart) => {
-          return this.httpClient.post<AuthResponseData>(
-            'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.fireBaseAPIKey,
+      switchMap((authData: AuthActions.LoginStart) => {
+        return this.httpClient
+          .post<AuthResponseData>(
+            'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' +
+              environment.fireBaseAPIKey,
             {
               email: authData.payload.email,
               password: authData.payload.password,
-              returnSecureToken: true
-            })
-            .pipe(
-              tap(resData => {
-                this.authService.setLogoutTimer(+resData.expiresIn * 1000);
-              }),
-              map(handleAuthentication),
-              catchError(handleError)
-            );
-        })
+              returnSecureToken: true,
+            }
+          )
+          .pipe(
+            tap((resData) => {
+              this.authService.setLogoutTimer(+resData.expiresIn * 1000);
+            }),
+            map(handleAuthentication),
+            catchError(handleError)
+          );
+      })
     )
   );
 
   authRedirect = createEffect(
-    () => this.actions$.pipe(
-      ofType(
-        AuthActions.AUTHENTICATE_SUCCESS
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.AUTHENTICATE_SUCCESS),
+        tap((authSuccessAction: AuthActions.AuthenticateSuccess) => {
+          if (authSuccessAction.payload.redirect) {
+            this.router.navigate(['/']);
+          }
+        })
       ),
-      tap((authSuccessAction: AuthActions.AuthenticateSuccess) => {
-        if (authSuccessAction.payload.redirect) {
-          this.router.navigate(['/']);
-        }
-      })
-    ),
     { dispatch: false }
   );
 
-  autoLogin = createEffect(
-    () => this.actions$.pipe(
+  autoLogin = createEffect(() =>
+    this.actions$.pipe(
       ofType(AuthActions.AUTO_LOGIN),
       map(() => {
         const userDataBase64 = localStorage.getItem('userData');
 
         if (!userDataBase64) {
           return {
-            type: 'DUMMY'
+            type: 'DUMMY',
           };
         }
 
         const userData: {
-          email: string,
-          id: string,
-          _token: string,
-          _tokenExpirationDate: string
+          email: string;
+          id: string;
+          _token: string;
+          _tokenExpirationDate: string;
         } = JSON.parse(atob(userDataBase64));
 
         const { email, id, _token, _tokenExpirationDate } = userData;
 
-        const loadedUser = new User(email, id, _token, new Date(_tokenExpirationDate));
+        const loadedUser = new User(
+          email,
+          id,
+          _token,
+          new Date(_tokenExpirationDate)
+        );
 
         if (loadedUser.token) {
-
-          const expirationDuration = new Date(_tokenExpirationDate).getTime() - new Date().getTime();
+          const expirationDuration =
+            new Date(_tokenExpirationDate).getTime() - new Date().getTime();
 
           this.authService.setLogoutTimer(+expirationDuration);
 
@@ -167,27 +178,27 @@ export class AuthEffects {
             userId: loadedUser.id,
             token: loadedUser.token,
             expirationDate: new Date(_tokenExpirationDate),
-            redirect: false
+            redirect: true,
           });
         }
 
         return {
-          type: 'DUMMY'
+          type: 'DUMMY',
         };
-
       })
     )
   );
 
   authLogout = createEffect(
-    () => this.actions$.pipe(
-      ofType(AuthActions.LOGOUT),
-      tap(() => {
-        this.authService.clearLogoutTimer();
-        localStorage.removeItem('userData');
-        this.router.navigate(['/auth']);
-      })
-    ),
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.LOGOUT),
+        tap(() => {
+          this.authService.clearLogoutTimer();
+          localStorage.removeItem('userData');
+          this.router.navigate(['/auth']);
+        })
+      ),
     { dispatch: false }
   );
 
@@ -196,5 +207,5 @@ export class AuthEffects {
     private httpClient: HttpClient,
     private router: Router,
     private authService: AuthService
-  ) { }
+  ) {}
 }
