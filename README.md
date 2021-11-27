@@ -1,6 +1,9 @@
-# MyFirstApp
+# This is a complete angular application built to solidify concepts learnt from a Udemy course on Angular.
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.0.6.
+
+It was later migrated to Angular 12.2.12.
+
 
 ## Development server
 
